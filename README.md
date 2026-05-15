@@ -4,10 +4,12 @@ This repository is a small, plain-English example of one ONNX model being produc
 
 ## What is in the repo?
 
-- `producer/` trains a simple iris flower classifier with scikit-learn and exports it as `iris_classifier.onnx`.
-- `python_consumer/` loads that ONNX file with ONNX Runtime for Python and checks an inference in a test.
-- `java_consumer/` loads the same ONNX file with ONNX Runtime for Java and checks the same inference in a test.
-- `.github/workflows/` contains three reusable pipelines plus one orchestration workflow. The producer pipeline publishes the packaged model as a GitHub Actions artifact. The two consumer pipelines download that artifact and run their tests against it.
+- `producer/` trains two models with scikit-learn and exports them as ONNX files.
+  - `train_and_package.py` — iris flower classifier that outputs a **long** class label (0, 1, or 2).
+  - `train_and_package_probability.py` — binary classifier that outputs a **float** probability of a flower being Iris Setosa (a value between 0 and 1).
+- `python_consumer/` loads both ONNX files with ONNX Runtime for Python and checks inferences in tests.
+- `java_consumer/` loads the same ONNX files with ONNX Runtime for Java and checks the same inferences in tests.
+- `.github/workflows/` contains three reusable pipelines plus one orchestration workflow. The producer pipeline publishes the packaged models as a GitHub Actions artifact. The two consumer pipelines download that artifact and run their tests against it.
 
 ## Why the iris dataset?
 
@@ -15,25 +17,30 @@ The iris dataset ships with scikit-learn, is public, and is small enough to keep
 
 ## Run the example locally
 
-1. Train and package the model.
+1. Train and package the models.
 
    ```bash
    python3 -m pip install -r producer/requirements.txt
    python3 producer/train_and_package.py --output-dir producer/dist
+   python3 producer/train_and_package_probability.py --output-dir producer/dist
    ```
 
-2. Run the Python consumer test.
+2. Run the Python consumer tests.
 
    ```bash
    python3 -m pip install -r python_consumer/requirements.txt
-   MODEL_PATH=producer/dist/iris_classifier.onnx python3 -m pytest python_consumer/tests
+   MODEL_PATH=producer/dist/iris_classifier.onnx \
+     SETOSA_MODEL_PATH=producer/dist/setosa_probability.onnx \
+     python3 -m pytest python_consumer/tests
    ```
 
-3. Run the Java consumer test.
+3. Run the Java consumer tests.
 
    ```bash
    cd java_consumer
-   MODEL_PATH=../producer/dist/iris_classifier.onnx mvn --batch-mode test
+   MODEL_PATH=../producer/dist/iris_classifier.onnx \
+     SETOSA_MODEL_PATH=../producer/dist/setosa_probability.onnx \
+     mvn --batch-mode test
    ```
 
 ## GitHub Actions flow

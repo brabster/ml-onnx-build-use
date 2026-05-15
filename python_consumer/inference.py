@@ -9,10 +9,18 @@ import onnxruntime as ort
 
 
 DEFAULT_MODEL_PATH = Path(__file__).resolve().parents[1] / "producer" / "dist" / "iris_classifier.onnx"
+DEFAULT_PROBABILITY_MODEL_PATH = Path(__file__).resolve().parents[1] / "producer" / "dist" / "setosa_probability.onnx"
 
 
 def resolve_model_path(model_path: str | Path | None = None) -> Path:
     candidate = Path(model_path or os.environ.get("MODEL_PATH", DEFAULT_MODEL_PATH)).expanduser()
+    if not candidate.exists():
+        raise FileNotFoundError(f"Model file not found: {candidate}")
+    return candidate
+
+
+def resolve_probability_model_path(model_path: str | Path | None = None) -> Path:
+    candidate = Path(model_path or os.environ.get("SETOSA_MODEL_PATH", DEFAULT_PROBABILITY_MODEL_PATH)).expanduser()
     if not candidate.exists():
         raise FileNotFoundError(f"Model file not found: {candidate}")
     return candidate
@@ -26,3 +34,13 @@ def predict_label(features: Iterable[float], model_path: str | Path | None = Non
     session = ort.InferenceSession(str(resolve_model_path(model_path)), providers=["CPUExecutionProvider"])
     label_output, _ = session.run(None, {"features": np.asarray([values], dtype=np.float32)})
     return int(np.asarray(label_output).reshape(-1)[0])
+
+
+def predict_setosa_probability(features: Iterable[float], model_path: str | Path | None = None) -> float:
+    values = list(features)
+    if len(values) != 4:
+        raise ValueError("The iris model expects exactly four numeric features.")
+
+    session = ort.InferenceSession(str(resolve_probability_model_path(model_path)), providers=["CPUExecutionProvider"])
+    (probability_output,) = session.run(None, {"features": np.asarray([values], dtype=np.float32)})
+    return float(np.asarray(probability_output).reshape(-1)[0])
