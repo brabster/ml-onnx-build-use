@@ -51,3 +51,33 @@ The iris dataset ships with scikit-learn, is public, and is small enough to keep
 4. `java-consumer.yml` does the same for the Java inference test.
 
 The end result is one model package and two independent consumers proving that it can be used from both ecosystems.
+
+## The model contract
+
+The producer and consumer need to agree on the model's interface — its **inputs**, **outputs**, and **semantics**.  Once that interface is stable, both sides can evolve independently without co-ordinated changes.
+
+### What is in the contract?
+
+| Element | Value |
+|---------|-------|
+| Input tensor name | `features` |
+| Input tensor type | `float32` |
+| Input tensor shape | `[1, 4]` — one row of four measurements (sepal length, sepal width, petal length, petal width in cm) |
+| `iris_classifier` output | A single `int64` class label: `0` = Setosa, `1` = Versicolor, `2` = Virginica |
+| `setosa_probability` output | A single `float32` probability that the flower is Iris Setosa (a value between 0 and 1) |
+
+### How is the contract tested?
+
+The producer publishes a **metadata file** alongside each ONNX file.  The metadata file includes a `sample_input` and the matching `expected_sample_prediction`, giving every consumer a concrete example to assert against.
+
+```
+producer/dist/
+  iris_classifier.onnx
+  model_metadata.json          ← sample_input + expected_sample_prediction
+  setosa_probability.onnx
+  setosa_probability_metadata.json
+```
+
+Both consumers read these metadata files to drive their tests.  A consumer never hardcodes the test values — it reads them from the metadata.  If the producer retrains the model or updates the sample, the consumers automatically pick up the new values; no co-ordinated change is required.
+
+The only stable part of the contract is the **metadata file names** (`model_metadata.json` and `setosa_probability_metadata.json`) and the **field names** (`sample_input`, `expected_sample_prediction`).  As long as those are kept consistent, producer and consumer are fully decoupled.
