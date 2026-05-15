@@ -7,7 +7,7 @@ This repository is a small, plain-English example of one ONNX model being produc
 - `producer/` trains a simple iris flower classifier with scikit-learn and exports it as `iris_classifier.onnx`.
 - `python_consumer/` loads that ONNX file with ONNX Runtime for Python and checks an inference in a test.
 - `java_consumer/` loads the same ONNX file with ONNX Runtime for Java and checks the same inference in a test.
-- `.github/workflows/` contains three pipelines. The producer pipeline publishes the packaged model as a GitHub Actions artifact. The two consumer pipelines download that artifact and run their tests against it.
+- `.github/workflows/` contains three reusable pipelines plus one orchestration workflow. The producer pipeline publishes the packaged model as a GitHub Actions artifact. The two consumer pipelines download that artifact and run their tests against it.
 
 ## Why the iris dataset?
 
@@ -38,8 +38,9 @@ The iris dataset ships with scikit-learn, is public, and is small enough to keep
 
 ## GitHub Actions flow
 
-1. `producer.yml` trains the model, tests the exporter, and uploads `producer/dist` as the `packaged-onnx-model` artifact.
-2. `python-consumer.yml` starts when the producer workflow succeeds, downloads the artifact, and runs the Python inference test.
-3. `java-consumer.yml` does the same for the Java inference test.
+1. `ci.yml` runs on pushes and pull requests, then calls the three reusable workflows in order.
+2. `producer.yml` trains the model, tests the exporter, and uploads `producer/dist` as the `packaged-onnx-model` artifact.
+3. `python-consumer.yml` downloads that artifact and runs the Python inference test.
+4. `java-consumer.yml` does the same for the Java inference test.
 
 The end result is one model package and two independent consumers proving that it can be used from both ecosystems.

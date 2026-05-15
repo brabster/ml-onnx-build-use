@@ -1,0 +1,21 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  producer:
+    uses: ./.github/workflows/producer.yml
+
+  python-consumer:
+    needs: producer
+    uses: ./.github/workflows/python-consumer.yml
+
+  java-consumer:
+    needs: producer
+    uses: ./.github/workflows/java-consumer.yml
