@@ -28,4 +28,5 @@ jobs:
         working-directory: java_consumer
         env:
           MODEL_PATH: ../model-artifact/iris_classifier.onnx
+          SETOSA_MODEL_PATH: ../model-artifact/setosa_probability.onnx
         run: mvn --batch-mode test

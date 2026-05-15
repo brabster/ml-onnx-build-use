@@ -23,8 +23,10 @@ jobs:
       - name: Run producer tests
         run: python -m pytest producer/tests
 
-      - name: Package the ONNX model
-        run: python producer/train_and_package.py --output-dir producer/dist
+      - name: Package the ONNX models
+        run: |
+          python producer/train_and_package.py --output-dir producer/dist
+          python producer/train_and_package_probability.py --output-dir producer/dist
 
       - name: Upload packaged model
         uses: actions/upload-artifact@v4
