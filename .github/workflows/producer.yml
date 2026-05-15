@@ -1,0 +1,33 @@
+name: producer
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install producer dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -r producer/requirements.txt
+
+      - name: Run producer tests
+        run: python -m pytest producer/tests
+
+      - name: Package the ONNX model
+        run: python producer/train_and_package.py --output-dir producer/dist
+
+      - name: Upload packaged model
+        uses: actions/upload-artifact@v4
+        with:
+          name: packaged-onnx-model
+          path: producer/dist
