@@ -10,9 +10,12 @@ class IrisPredictorTest {
 
     @Test
     void predictsSetosaFromThePackagedModel() throws Exception {
+        ModelContract contract = ModelContract.load(modelPath().resolveSibling("model_metadata.json"));
+        assertEquals(4, contract.featureCount());
+
         try (IrisPredictor predictor = new IrisPredictor(modelPath())) {
-            long prediction = predictor.predict(new float[]{5.1f, 3.5f, 1.4f, 0.2f});
-            assertEquals(0L, prediction);
+            long prediction = predictor.predict(contract.sampleInput());
+            assertEquals(Math.round(contract.expectedSamplePrediction()), prediction);
         }
     }
 

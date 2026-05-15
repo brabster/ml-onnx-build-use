@@ -15,6 +15,27 @@ This repository is a small, plain-English example of one ONNX model being produc
 
 The iris dataset ships with scikit-learn, is public, and is small enough to keep the example focused on packaging and inference instead of data wrangling.
 
+## Producer/consumer contract
+
+To keep producer and consumers decoupled, the producer packages each ONNX model with a sidecar metadata file that acts as the contract:
+
+- `iris_classifier.onnx` + `model_metadata.json`
+- `setosa_probability.onnx` + `setosa_probability_metadata.json`
+
+Each contract file includes:
+
+- model file name
+- input name and required feature count
+- output name and output kind
+- a sample input plus expected prediction and allowed tolerance
+
+How this is used:
+
+- producer tests verify the contract fields are exported and that ONNX inference matches the expected sample prediction.
+- python and java consumer tests read the same contract files from the packaged artifact and assert inference against the agreed sample/tolerance.
+
+This lets producer and consumers evolve independently as long as they preserve the contract.
+
 ## Run the example locally
 
 1. Train and package the models.

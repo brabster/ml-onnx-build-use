@@ -16,6 +16,12 @@ def test_train_and_package_exports_a_working_model(tmp_path):
 
     metadata = json.loads((tmp_path / METADATA_FILE_NAME).read_text(encoding="utf-8"))
     assert metadata["dataset"] == "iris"
+    assert metadata["contract_version"] == 1
+    assert metadata["input_name"] == "features"
+    assert metadata["feature_count"] == 4
+    assert metadata["output_name"] == "label"
+    assert metadata["output_kind"] == "class_label"
+    assert metadata["prediction_tolerance"] == 0.0
 
     session = ort.InferenceSession(str(model_path), providers=["CPUExecutionProvider"])
     label_output, _ = session.run(

@@ -67,8 +67,14 @@ def train_and_package(output_dir: Path) -> Path:
 
     sample_input = features[0].tolist()
     metadata = {
+        "contract_version": 1,
         "dataset": "iris",
         "description": "Probability that an iris flower is Iris Setosa",
+        "input_name": "features",
+        "feature_count": features.shape[1],
+        "output_name": "setosa_probability",
+        "output_kind": "probability",
+        "prediction_tolerance": 0.001,
         "feature_names": iris.feature_names,
         "sample_input": sample_input,
         "expected_sample_prediction": float(

@@ -38,7 +38,13 @@ def train_and_package(output_dir: Path) -> Path:
     onnx.save_model(onnx_model, model_path)
 
     metadata = {
+        "contract_version": 1,
         "dataset": "iris",
+        "input_name": "features",
+        "feature_count": features.shape[1],
+        "output_name": "label",
+        "output_kind": "class_label",
+        "prediction_tolerance": 0.0,
         "feature_names": iris.feature_names,
         "target_names": iris.target_names.tolist(),
         "sample_input": features[0].tolist(),

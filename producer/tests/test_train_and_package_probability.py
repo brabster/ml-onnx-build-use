@@ -20,6 +20,12 @@ def test_train_and_package_probability_exports_a_working_model(tmp_path):
 
     metadata = json.loads((tmp_path / METADATA_FILE_NAME).read_text(encoding="utf-8"))
     assert metadata["dataset"] == "iris"
+    assert metadata["contract_version"] == 1
+    assert metadata["input_name"] == "features"
+    assert metadata["feature_count"] == 4
+    assert metadata["output_name"] == "setosa_probability"
+    assert metadata["output_kind"] == "probability"
+    assert metadata["prediction_tolerance"] == 0.001
 
     session = ort.InferenceSession(str(model_path), providers=["CPUExecutionProvider"])
     (probability_output,) = session.run(
@@ -28,5 +34,5 @@ def test_train_and_package_probability_exports_a_working_model(tmp_path):
     )
 
     prediction = float(np.asarray(probability_output).reshape(-1)[0])
-    assert abs(prediction - metadata["expected_sample_prediction"]) < 0.001
+    assert abs(prediction - metadata["expected_sample_prediction"]) <= metadata["prediction_tolerance"]
     assert 0.0 <= prediction <= 1.0
