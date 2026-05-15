@@ -10,8 +10,10 @@ class IrisPredictorTest {
 
     @Test
     void predictsSetosaFromThePackagedModel() throws Exception {
+        float[] input = {5.1f, 3.5f, 1.4f, 0.2f};
         try (IrisPredictor predictor = new IrisPredictor(modelPath())) {
-            long prediction = predictor.predict(new float[]{5.1f, 3.5f, 1.4f, 0.2f});
+            long prediction = predictor.predict(input);
+            System.out.printf("predict_label(%s) -> %d (expected 0)%n", java.util.Arrays.toString(input), prediction);
             assertEquals(0L, prediction);
         }
     }

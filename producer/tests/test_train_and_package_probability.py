@@ -28,5 +28,6 @@ def test_train_and_package_probability_exports_a_working_model(tmp_path):
     )
 
     prediction = float(np.asarray(probability_output).reshape(-1)[0])
+    print(f"predict_setosa_probability({metadata['sample_input']}) -> {prediction:.4f} (expected {metadata['expected_sample_prediction']:.4f})")
     assert abs(prediction - metadata["expected_sample_prediction"]) < 0.001
     assert 0.0 <= prediction <= 1.0
