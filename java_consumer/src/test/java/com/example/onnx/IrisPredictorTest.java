@@ -1,10 +1,17 @@
 package com.example.onnx;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class IrisPredictorTest {
 
@@ -20,16 +27,24 @@ class IrisPredictorTest {
 
     @Test
     void reportsInferenceLatencyAndConsistencyExample() throws Exception {
-        float[] input = {5.1f, 3.5f, 1.4f, 0.2f};
+        List<float[]> samples = loadLatencyInputSamples();
+        assertFalse(samples.isEmpty());
         int runs = 100;
         long[] durationsNs = new long[runs];
-        long[] predictions = new long[runs];
+        Map<String, Long> firstPredictionBySample = new HashMap<>();
 
         try (IrisPredictor predictor = new IrisPredictor(modelPath())) {
             for (int i = 0; i < runs; i++) {
+                float[] input = samples.get(i % samples.size());
                 long startedAt = System.nanoTime();
-                predictions[i] = predictor.predict(input);
+                long prediction = predictor.predict(input);
                 durationsNs[i] = System.nanoTime() - startedAt;
+                String sampleKey = java.util.Arrays.toString(input);
+                if (firstPredictionBySample.containsKey(sampleKey)) {
+                    assertEquals(firstPredictionBySample.get(sampleKey), prediction);
+                } else {
+                    firstPredictionBySample.put(sampleKey, prediction);
+                }
             }
         }
 
@@ -37,15 +52,12 @@ class IrisPredictorTest {
         long maxNs = java.util.Arrays.stream(durationsNs).max().orElse(0L);
         double avgNs = java.util.Arrays.stream(durationsNs).average().orElse(0.0);
         System.out.printf(
-                "predict_label latency over %d runs: min=%.3fms avg=%.3fms max=%.3fms%n",
+                "predict_label latency over %d runs: min=%.3fms avg=%.3fms max=%.3fms across %d committed sample inputs%n",
                 runs,
                 minNs / 1_000_000.0,
                 avgNs / 1_000_000.0,
-                maxNs / 1_000_000.0);
-
-        for (long prediction : predictions) {
-            assertEquals(predictions[0], prediction);
-        }
+                maxNs / 1_000_000.0,
+                samples.size());
     }
 
     private static Path modelPath() {
@@ -53,5 +65,35 @@ class IrisPredictorTest {
                 "model.path",
                 System.getenv().getOrDefault("MODEL_PATH", "../producer/dist/iris_classifier.onnx"));
         return Paths.get(configuredPath).toAbsolutePath().normalize();
+    }
+
+    private static Path latencyInputSamplesPath() {
+        String configuredPath = System.getProperty(
+                "latency.input.samples.path",
+                System.getenv().getOrDefault(
+                        "LATENCY_INPUT_SAMPLES_PATH",
+                        "../producer/contracts/latency_input_samples.csv"));
+        return Paths.get(configuredPath).toAbsolutePath().normalize();
+    }
+
+    private static List<float[]> loadLatencyInputSamples() throws IOException {
+        List<float[]> samples = new ArrayList<>();
+        List<String> lines = Files.readAllLines(latencyInputSamplesPath());
+        for (int lineIndex = 1; lineIndex < lines.size(); lineIndex++) {
+            String line = lines.get(lineIndex).trim();
+            if (line.isEmpty()) {
+                continue;
+            }
+            String[] values = line.split(",");
+            if (values.length != 4) {
+                throw new IllegalStateException("Expected 4 float values in sample row: " + line);
+            }
+            float[] sample = new float[4];
+            for (int i = 0; i < values.length; i++) {
+                sample[i] = Float.parseFloat(values[i]);
+            }
+            samples.add(sample);
+        }
+        return samples;
     }
 }

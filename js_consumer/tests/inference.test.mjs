@@ -1,6 +1,20 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { predictLabel, predictSetosaProbability } from '../inference.mjs';
+
+async function loadLatencyInputSamples() {
+    const content = await readFile(
+        new URL('../../producer/contracts/latency_input_samples.csv', import.meta.url),
+        'utf8',
+    );
+    const lines = content
+        .trim()
+        .split('\n')
+        .slice(1)
+        .filter((line) => line.trim().length > 0);
+    return lines.map((line) => line.split(',').map((value) => Number.parseFloat(value)));
+}
 
 test('predicts Setosa class label from the packaged model', async () => {
     const features = [5.1, 3.5, 1.4, 0.2];
@@ -18,23 +32,29 @@ test('predicts high Setosa probability from the packaged model', async () => {
 });
 
 test('reports inference latency and consistency example', async () => {
-    const features = [5.1, 3.5, 1.4, 0.2];
+    const samples = await loadLatencyInputSamples();
+    assert.ok(samples.length > 0);
     const runs = 100;
     const durationsMs = [];
-    const predictions = [];
+    const firstPredictionBySample = new Map();
 
     for (let i = 0; i < runs; i += 1) {
+        const features = samples[i % samples.length];
         const startedAt = performance.now();
-        predictions.push(await predictLabel(features));
+        const prediction = await predictLabel(features);
         durationsMs.push(performance.now() - startedAt);
+        const sampleKey = features.join(',');
+        if (firstPredictionBySample.has(sampleKey)) {
+            assert.strictEqual(prediction, firstPredictionBySample.get(sampleKey));
+        } else {
+            firstPredictionBySample.set(sampleKey, prediction);
+        }
     }
 
     const minMs = Math.min(...durationsMs);
     const maxMs = Math.max(...durationsMs);
     const avgMs = durationsMs.reduce((sum, value) => sum + value, 0) / runs;
     console.log(
-        `predictLabel latency over ${runs} runs: min=${minMs.toFixed(3)}ms avg=${avgMs.toFixed(3)}ms max=${maxMs.toFixed(3)}ms`,
+        `predictLabel latency over ${runs} runs: min=${minMs.toFixed(3)}ms avg=${avgMs.toFixed(3)}ms max=${maxMs.toFixed(3)}ms across ${samples.length} committed sample inputs`,
     );
-
-    assert.ok(predictions.every((prediction) => prediction === predictions[0]));
 });

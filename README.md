@@ -7,6 +7,7 @@ This repository is a small, plain-English example of one ONNX model being produc
 - `producer/` trains two models with scikit-learn and exports them as ONNX files.
   - `train_and_package.py` — iris flower classifier that outputs a **long** class label (0, 1, or 2).
   - `train_and_package_probability.py` — binary classifier that outputs a **float** probability of a flower being Iris Setosa (a value between 0 and 1).
+  - `contracts/latency_input_samples.csv` — committed random Iris feature samples shared by all consumer latency tests.
 - `python_consumer/` loads both ONNX files with ONNX Runtime for Python and checks inferences in tests.
 - `java_consumer/` loads the same ONNX files with ONNX Runtime for Java and checks the same inferences in tests.
 - `js_consumer/` loads the same ONNX files with ONNX Runtime Web and checks the same inferences in tests, using the WebAssembly backend that also powers in-browser inference.
@@ -58,8 +59,8 @@ The iris dataset ships with scikit-learn, is public, and is small enough to keep
 
 1. `ci.yml` runs on pushes and pull requests, then calls the four reusable workflows in order.
 2. `producer.yml` trains the model, tests the exporter, and uploads `producer/dist` as the `packaged-onnx-model` artifact.
-3. `python-consumer.yml` downloads that artifact and runs the Python inference tests (including latency/consistency examples).
-4. `java-consumer.yml` does the same for the Java inference tests (including latency/consistency examples).
-5. `js-consumer.yml` does the same for the JavaScript inference tests (including latency/consistency examples).
+3. `python-consumer.yml` downloads that artifact and runs the Python inference tests (including latency/consistency examples over shared committed sample inputs).
+4. `java-consumer.yml` does the same for the Java inference tests (including latency/consistency examples over shared committed sample inputs).
+5. `js-consumer.yml` does the same for the JavaScript inference tests (including latency/consistency examples over shared committed sample inputs).
 
 The end result is one model package and three independent consumers proving that it can be used from Python, Java, and JavaScript (including browsers via WebAssembly).
