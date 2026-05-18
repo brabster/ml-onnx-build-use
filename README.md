@@ -64,3 +64,11 @@ The iris dataset ships with scikit-learn, is public, and is small enough to keep
 5. `js-consumer.yml` does the same for the JavaScript inference tests (including latency/consistency examples over shared committed sample inputs with 10 warmup runs and 1000 measured runs).
 
 The end result is one model package and three independent consumers proving that it can be used from Python, Java, and JavaScript (including browsers via WebAssembly).
+
+## Note about ONNX Runtime PCI warning in GitHub Actions
+
+You may see this warning in Linux-based GitHub Actions logs:
+
+`[W:onnxruntime:..., device_discovery.cc:133 GetPciBusId] Skipping pci_bus_id ... did not match expected pattern ...`
+
+This comes from ONNX Runtime probing host hardware paths on hosted runners. It is expected in this environment and does not indicate a model or test failure.
