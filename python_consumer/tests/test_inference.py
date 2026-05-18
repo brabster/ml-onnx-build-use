@@ -2,7 +2,11 @@ import csv
 from pathlib import Path
 from time import perf_counter
 
-from python_consumer.inference import predict_label, predict_setosa_probability
+from python_consumer.inference import (
+    predict_label,
+    predict_label_from_pickle,
+    predict_setosa_probability,
+)
 
 
 LATENCY_INPUT_SAMPLES_PATH = (
@@ -23,6 +27,12 @@ def test_python_consumer_predicts_setosa_from_the_packaged_model():
     assert result == 0
 
 
+def test_python_consumer_predicts_setosa_from_the_packaged_pickle_model():
+    result = predict_label_from_pickle([5.1, 3.5, 1.4, 0.2])
+    print(f"predict_label_from_pickle([5.1, 3.5, 1.4, 0.2]) -> {result}")
+    assert result == 0
+
+
 def test_python_consumer_predicts_setosa_probability_from_the_packaged_model():
     probability = predict_setosa_probability([5.1, 3.5, 1.4, 0.2])
     print(f"predict_setosa_probability([5.1, 3.5, 1.4, 0.2]) -> {probability:.4f}")
@@ -36,6 +46,7 @@ def test_python_consumer_inference_latency_and_consistency_example():
     warmup_runs = 10
     measured_runs = 1000
     durations_ms = []
+    pickle_durations_ms = []
     first_prediction_by_sample = {}
 
     for warmup_run in range(warmup_runs):
@@ -47,21 +58,37 @@ def test_python_consumer_inference_latency_and_consistency_example():
         started_at = perf_counter()
         prediction = predict_label(features)
         durations_ms.append((perf_counter() - started_at) * 1000)
+        started_at = perf_counter()
+        pickle_prediction = predict_label_from_pickle(features)
+        pickle_durations_ms.append((perf_counter() - started_at) * 1000)
         sample_key = tuple(features)
         if sample_key in first_prediction_by_sample:
             assert prediction == first_prediction_by_sample[sample_key]
+            assert pickle_prediction == first_prediction_by_sample[sample_key]
         else:
             first_prediction_by_sample[sample_key] = prediction
 
     sorted_durations = sorted(durations_ms)
+    sorted_pickle_durations = sorted(pickle_durations_ms)
     p50 = sorted_durations[int(0.50 * measured_runs)]
     p95 = sorted_durations[int(0.95 * measured_runs)]
     p99 = sorted_durations[int(0.99 * measured_runs)]
+    pickle_p50 = sorted_pickle_durations[int(0.50 * measured_runs)]
+    pickle_p95 = sorted_pickle_durations[int(0.95 * measured_runs)]
+    pickle_p99 = sorted_pickle_durations[int(0.99 * measured_runs)]
     print(
-        "predict_label latency over "
+        "predict_label ONNX latency over "
         f"{measured_runs} measured runs after {warmup_runs} warmup runs: "
         f"P50={p50:.3f}ms "
         f"P95={p95:.3f}ms "
         f"P99={p99:.3f}ms "
         f"max={sorted_durations[-1]:.3f}ms across {len(samples)} committed sample inputs"
+    )
+    print(
+        "predict_label pickle latency over "
+        f"{measured_runs} measured runs after {warmup_runs} warmup runs: "
+        f"P50={pickle_p50:.3f}ms "
+        f"P95={pickle_p95:.3f}ms "
+        f"P99={pickle_p99:.3f}ms "
+        f"max={sorted_pickle_durations[-1]:.3f}ms across {len(samples)} committed sample inputs"
     )

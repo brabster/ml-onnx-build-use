@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import pickle
 from pathlib import Path
 
 import numpy as np
@@ -13,6 +14,7 @@ from skl2onnx.common.data_types import FloatTensorType
 
 
 MODEL_FILE_NAME = "iris_classifier.onnx"
+PICKLE_MODEL_FILE_NAME = "iris_classifier.pkl"
 METADATA_FILE_NAME = "model_metadata.json"
 
 
@@ -33,9 +35,12 @@ def train_and_package(output_dir: Path) -> Path:
 
     output_dir.mkdir(parents=True, exist_ok=True)
     model_path = output_dir / MODEL_FILE_NAME
+    pickle_model_path = output_dir / PICKLE_MODEL_FILE_NAME
     metadata_path = output_dir / METADATA_FILE_NAME
 
     onnx.save_model(onnx_model, model_path)
+    with pickle_model_path.open("wb") as model_file:
+        pickle.dump(classifier, model_file)
 
     metadata = {
         "dataset": "iris",
@@ -44,6 +49,7 @@ def train_and_package(output_dir: Path) -> Path:
         "sample_input": features[0].tolist(),
         "expected_sample_prediction": int(labels[0]),
         "model_file": MODEL_FILE_NAME,
+        "pickle_model_file": PICKLE_MODEL_FILE_NAME,
     }
     metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
     return model_path

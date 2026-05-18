@@ -4,18 +4,18 @@ This repository is a small, plain-English example of one ONNX model being produc
 
 ## What is in the repo?
 
-- `producer/` trains two models with scikit-learn and exports them as ONNX files.
-  - `train_and_package.py` — iris flower classifier that outputs a **long** class label (0, 1, or 2).
+- `producer/` trains two models with scikit-learn and exports ONNX and pickle files.
+  - `train_and_package.py` — iris flower classifier that outputs a **long** class label (0, 1, or 2), exported as `iris_classifier.onnx` and `iris_classifier.pkl`.
   - `train_and_package_probability.py` — binary classifier that outputs a **float** probability of a flower being Iris Setosa (a value between 0 and 1).
   - `contracts/latency_input_samples.csv` — committed random Iris feature samples shared by all consumer latency tests.
-- `python_consumer/` loads both ONNX files with ONNX Runtime for Python and checks inferences in tests.
+- `python_consumer/` loads both ONNX files with ONNX Runtime for Python, also loads the pickled classifier, and checks inferences in tests (including ONNX vs pickle latency metrics for the classifier).
 - `java_consumer/` loads the same ONNX files with ONNX Runtime for Java and checks the same inferences in tests.
 - `js_consumer/` loads the same ONNX files with ONNX Runtime Web and checks the same inferences in tests, using the WebAssembly backend that also powers in-browser inference.
 - `.github/workflows/` contains three reusable pipelines plus one orchestration workflow. The producer pipeline publishes the packaged models as a GitHub Actions artifact. The three consumer pipelines download that artifact and run their tests against it.
 
 ## What were the consumer results?
 
-The consumers were able to perform inference using the ONNX models, and got the correct answers. Performance of the inferences, measured after a warm up set and over 1000 inferences (looping over the same 15 randomly-generated inputs) produced the following metrics in [this CI run](https://github.com/brabster/ml-onnx-build-use/actions/runs/26023703853).
+The consumers were able to perform inference using the ONNX models, and got the correct answers. Performance of the inferences, measured after a warm up set and over 1000 inferences (looping over the same 15 randomly-generated inputs) produced the following metrics in [this CI run](https://github.com/brabster/ml-onnx-build-use/actions/runs/26023703853). The Python consumer workflow now also prints comparable latency metrics for the pickled classifier artifact.
 
 |Consumer|P50(ms)|P95(ms)|P99(ms)|max(ms)|
 |--------|-------|-------|-------|-------|
@@ -44,6 +44,7 @@ The iris dataset ships with scikit-learn, is public, and is small enough to keep
    ```bash
    python3 -m pip install -r python_consumer/requirements.txt
    MODEL_PATH=producer/dist/iris_classifier.onnx \
+     PICKLE_MODEL_PATH=producer/dist/iris_classifier.pkl \
      SETOSA_MODEL_PATH=producer/dist/setosa_probability.onnx \
      python3 -m pytest python_consumer/tests
    ```
@@ -70,8 +71,8 @@ The iris dataset ships with scikit-learn, is public, and is small enough to keep
 ## GitHub Actions flow
 
 1. `ci.yml` runs on pushes and pull requests, then calls the four reusable workflows in order.
-2. `producer.yml` trains the model, tests the exporter, and uploads `producer/dist` as the `packaged-onnx-model` artifact.
-3. `python-consumer.yml` downloads that artifact and runs the Python inference tests (including latency/consistency examples over shared committed sample inputs with 10 warmup runs and 1000 measured runs).
+2. `producer.yml` trains the model, tests the exporter, and uploads `producer/dist` (ONNX and pickle artifacts) as the `packaged-onnx-model` artifact.
+3. `python-consumer.yml` downloads that artifact and runs the Python inference tests (including latency/consistency examples over shared committed sample inputs with 10 warmup runs and 1000 measured runs, reporting ONNX and pickle classifier latency metrics).
 4. `java-consumer.yml` does the same for the Java inference tests (including latency/consistency examples over shared committed sample inputs with 10 warmup runs and 1000 measured runs).
 5. `js-consumer.yml` does the same for the JavaScript inference tests (including latency/consistency examples over shared committed sample inputs with 10 warmup runs and 1000 measured runs).
 

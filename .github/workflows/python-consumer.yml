@@ -29,5 +29,6 @@ jobs:
       - name: Run Python consumer test
         env:
           MODEL_PATH: model-artifact/iris_classifier.onnx
+          PICKLE_MODEL_PATH: model-artifact/iris_classifier.pkl
           SETOSA_MODEL_PATH: model-artifact/setosa_probability.onnx
         run: python -m pytest -v -s python_consumer/tests
