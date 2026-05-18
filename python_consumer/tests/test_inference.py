@@ -53,10 +53,15 @@ def test_python_consumer_inference_latency_and_consistency_example():
         else:
             first_prediction_by_sample[sample_key] = prediction
 
+    sorted_durations = sorted(durations_ms)
+    p50 = sorted_durations[int(0.50 * measured_runs)]
+    p95 = sorted_durations[int(0.95 * measured_runs)]
+    p99 = sorted_durations[int(0.99 * measured_runs)]
     print(
         "predict_label latency over "
         f"{measured_runs} measured runs after {warmup_runs} warmup runs: "
-        f"min={min(durations_ms):.3f}ms "
-        f"avg={sum(durations_ms) / measured_runs:.3f}ms "
-        f"max={max(durations_ms):.3f}ms across {len(samples)} committed sample inputs"
+        f"P50={p50:.3f}ms "
+        f"P95={p95:.3f}ms "
+        f"P99={p99:.3f}ms "
+        f"max={sorted_durations[-1]:.3f}ms across {len(samples)} committed sample inputs"
     )

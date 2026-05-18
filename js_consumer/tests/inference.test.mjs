@@ -57,10 +57,12 @@ test('reports inference latency and consistency example', async () => {
         }
     }
 
-    const minMs = Math.min(...durationsMs);
-    const maxMs = Math.max(...durationsMs);
-    const avgMs = durationsMs.reduce((sum, value) => sum + value, 0) / measuredRuns;
+    const sortedMs = [...durationsMs].sort((a, b) => a - b);
+    const p50Ms = sortedMs[Math.floor(0.50 * measuredRuns)];
+    const p95Ms = sortedMs[Math.floor(0.95 * measuredRuns)];
+    const p99Ms = sortedMs[Math.floor(0.99 * measuredRuns)];
+    const maxMs = sortedMs[measuredRuns - 1];
     console.log(
-        `predictLabel latency over ${measuredRuns} measured runs after ${warmupRuns} warmup runs: min=${minMs.toFixed(3)}ms avg=${avgMs.toFixed(3)}ms max=${maxMs.toFixed(3)}ms across ${samples.length} committed sample inputs`,
+        `predictLabel latency over ${measuredRuns} measured runs after ${warmupRuns} warmup runs: P50=${p50Ms.toFixed(3)}ms P95=${p95Ms.toFixed(3)}ms P99=${p99Ms.toFixed(3)}ms max=${maxMs.toFixed(3)}ms across ${samples.length} committed sample inputs`,
     );
 });
