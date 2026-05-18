@@ -34,11 +34,17 @@ test('predicts high Setosa probability from the packaged model', async () => {
 test('reports inference latency and consistency example', async () => {
     const samples = await loadLatencyInputSamples();
     assert.ok(samples.length > 0);
-    const runs = 100;
+    const warmupRuns = 10;
+    const measuredRuns = 1000;
     const durationsMs = [];
     const firstPredictionBySample = new Map();
 
-    for (let i = 0; i < runs; i += 1) {
+    for (let warmupRun = 0; warmupRun < warmupRuns; warmupRun += 1) {
+        const warmupFeatures = samples[warmupRun % samples.length];
+        await predictLabel(warmupFeatures);
+    }
+
+    for (let i = 0; i < measuredRuns; i += 1) {
         const features = samples[i % samples.length];
         const startedAt = performance.now();
         const prediction = await predictLabel(features);
@@ -53,8 +59,8 @@ test('reports inference latency and consistency example', async () => {
 
     const minMs = Math.min(...durationsMs);
     const maxMs = Math.max(...durationsMs);
-    const avgMs = durationsMs.reduce((sum, value) => sum + value, 0) / runs;
+    const avgMs = durationsMs.reduce((sum, value) => sum + value, 0) / measuredRuns;
     console.log(
-        `predictLabel latency over ${runs} runs: min=${minMs.toFixed(3)}ms avg=${avgMs.toFixed(3)}ms max=${maxMs.toFixed(3)}ms across ${samples.length} committed sample inputs`,
+        `predictLabel latency over ${measuredRuns} measured runs after ${warmupRuns} warmup runs: min=${minMs.toFixed(3)}ms avg=${avgMs.toFixed(3)}ms max=${maxMs.toFixed(3)}ms across ${samples.length} committed sample inputs`,
     );
 });

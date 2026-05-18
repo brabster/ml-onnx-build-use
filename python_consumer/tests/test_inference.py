@@ -33,11 +33,16 @@ def test_python_consumer_predicts_setosa_probability_from_the_packaged_model():
 def test_python_consumer_inference_latency_and_consistency_example():
     samples = load_latency_input_samples()
     assert samples
-    runs = 100
+    warmup_runs = 10
+    measured_runs = 1000
     durations_ms = []
     first_prediction_by_sample = {}
 
-    for run in range(runs):
+    for warmup_run in range(warmup_runs):
+        warmup_features = samples[warmup_run % len(samples)]
+        predict_label(warmup_features)
+
+    for run in range(measured_runs):
         features = samples[run % len(samples)]
         started_at = perf_counter()
         prediction = predict_label(features)
@@ -50,7 +55,8 @@ def test_python_consumer_inference_latency_and_consistency_example():
 
     print(
         "predict_label latency over "
-        f"{runs} runs: min={min(durations_ms):.3f}ms "
-        f"avg={sum(durations_ms) / runs:.3f}ms max={max(durations_ms):.3f}ms "
-        f"across {len(samples)} committed sample inputs"
+        f"{measured_runs} measured runs after {warmup_runs} warmup runs: "
+        f"min={min(durations_ms):.3f}ms "
+        f"avg={sum(durations_ms) / measured_runs:.3f}ms "
+        f"max={max(durations_ms):.3f}ms across {len(samples)} committed sample inputs"
     )

@@ -29,12 +29,18 @@ class IrisPredictorTest {
     void reportsInferenceLatencyAndConsistencyExample() throws Exception {
         List<float[]> samples = loadLatencyInputSamples();
         assertFalse(samples.isEmpty());
-        int runs = 100;
-        long[] durationsNs = new long[runs];
+        int warmupRuns = 10;
+        int measuredRuns = 1000;
+        long[] durationsNs = new long[measuredRuns];
         Map<String, Long> firstPredictionBySample = new HashMap<>();
 
         try (IrisPredictor predictor = new IrisPredictor(modelPath())) {
-            for (int i = 0; i < runs; i++) {
+            for (int warmupRun = 0; warmupRun < warmupRuns; warmupRun++) {
+                float[] warmupInput = samples.get(warmupRun % samples.size());
+                predictor.predict(warmupInput);
+            }
+
+            for (int i = 0; i < measuredRuns; i++) {
                 float[] input = samples.get(i % samples.size());
                 long startedAt = System.nanoTime();
                 long prediction = predictor.predict(input);
@@ -52,8 +58,9 @@ class IrisPredictorTest {
         long maxNs = java.util.Arrays.stream(durationsNs).max().orElse(0L);
         double avgNs = java.util.Arrays.stream(durationsNs).average().orElse(0.0);
         System.out.printf(
-                "predict_label latency over %d runs: min=%.3fms avg=%.3fms max=%.3fms across %d committed sample inputs%n",
-                runs,
+                "predict_label latency over %d measured runs after %d warmup runs: min=%.3fms avg=%.3fms max=%.3fms across %d committed sample inputs%n",
+                measuredRuns,
+                warmupRuns,
                 minNs / 1_000_000.0,
                 avgNs / 1_000_000.0,
                 maxNs / 1_000_000.0,

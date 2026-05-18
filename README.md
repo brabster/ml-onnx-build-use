@@ -59,8 +59,8 @@ The iris dataset ships with scikit-learn, is public, and is small enough to keep
 
 1. `ci.yml` runs on pushes and pull requests, then calls the four reusable workflows in order.
 2. `producer.yml` trains the model, tests the exporter, and uploads `producer/dist` as the `packaged-onnx-model` artifact.
-3. `python-consumer.yml` downloads that artifact and runs the Python inference tests (including latency/consistency examples over shared committed sample inputs).
-4. `java-consumer.yml` does the same for the Java inference tests (including latency/consistency examples over shared committed sample inputs).
-5. `js-consumer.yml` does the same for the JavaScript inference tests (including latency/consistency examples over shared committed sample inputs).
+3. `python-consumer.yml` downloads that artifact and runs the Python inference tests (including latency/consistency examples over shared committed sample inputs with 10 warmup runs and 1000 measured runs).
+4. `java-consumer.yml` does the same for the Java inference tests (including latency/consistency examples over shared committed sample inputs with 10 warmup runs and 1000 measured runs).
+5. `js-consumer.yml` does the same for the JavaScript inference tests (including latency/consistency examples over shared committed sample inputs with 10 warmup runs and 1000 measured runs).
 
 The end result is one model package and three independent consumers proving that it can be used from Python, Java, and JavaScript (including browsers via WebAssembly).
