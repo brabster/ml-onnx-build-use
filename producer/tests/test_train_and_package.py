@@ -23,4 +23,6 @@ def test_train_and_package_exports_a_working_model(tmp_path):
         {"features": np.asarray([metadata["sample_input"]], dtype=np.float32)},
     )
 
-    assert int(np.asarray(label_output).reshape(-1)[0]) == metadata["expected_sample_prediction"]
+    actual = int(np.asarray(label_output).reshape(-1)[0])
+    print(f"predict_label({metadata['sample_input']}) -> {actual} (expected {metadata['expected_sample_prediction']})")
+    assert actual == metadata["expected_sample_prediction"]

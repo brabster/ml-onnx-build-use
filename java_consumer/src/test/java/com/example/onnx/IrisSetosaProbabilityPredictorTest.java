@@ -10,8 +10,10 @@ class IrisSetosaProbabilityPredictorTest {
 
     @Test
     void predictsHighSetosaProbabilityForSetosaFromThePackagedModel() throws Exception {
+        float[] input = {5.1f, 3.5f, 1.4f, 0.2f};
         try (IrisSetosaProbabilityPredictor predictor = new IrisSetosaProbabilityPredictor(modelPath())) {
-            float probability = predictor.predict(new float[]{5.1f, 3.5f, 1.4f, 0.2f});
+            float probability = predictor.predict(input);
+            System.out.printf("predict_setosa_probability(%s) -> %.4f%n", java.util.Arrays.toString(input), probability);
             assertTrue(probability >= 0.0f && probability <= 1.0f, "probability must be between 0 and 1");
             assertTrue(probability > 0.9f, "a known Setosa sample should have high Setosa probability");
         }
