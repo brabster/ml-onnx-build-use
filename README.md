@@ -9,7 +9,8 @@ This repository is a small, plain-English example of one ONNX model being produc
   - `train_and_package_probability.py` — binary classifier that outputs a **float** probability of a flower being Iris Setosa (a value between 0 and 1).
 - `python_consumer/` loads both ONNX files with ONNX Runtime for Python and checks inferences in tests.
 - `java_consumer/` loads the same ONNX files with ONNX Runtime for Java and checks the same inferences in tests.
-- `.github/workflows/` contains three reusable pipelines plus one orchestration workflow. The producer pipeline publishes the packaged models as a GitHub Actions artifact. The two consumer pipelines download that artifact and run their tests against it.
+- `js_consumer/` loads the same ONNX files with ONNX Runtime Web and checks the same inferences in tests, using the WebAssembly backend that also powers in-browser inference.
+- `.github/workflows/` contains three reusable pipelines plus one orchestration workflow. The producer pipeline publishes the packaged models as a GitHub Actions artifact. The three consumer pipelines download that artifact and run their tests against it.
 
 ## Why the iris dataset?
 
@@ -43,11 +44,22 @@ The iris dataset ships with scikit-learn, is public, and is small enough to keep
      mvn --batch-mode test
    ```
 
+4. Run the JavaScript consumer tests.
+
+   ```bash
+   cd js_consumer
+   npm install
+   MODEL_PATH=../producer/dist/iris_classifier.onnx \
+     SETOSA_MODEL_PATH=../producer/dist/setosa_probability.onnx \
+     npm test
+   ```
+
 ## GitHub Actions flow
 
-1. `ci.yml` runs on pushes and pull requests, then calls the three reusable workflows in order.
+1. `ci.yml` runs on pushes and pull requests, then calls the four reusable workflows in order.
 2. `producer.yml` trains the model, tests the exporter, and uploads `producer/dist` as the `packaged-onnx-model` artifact.
 3. `python-consumer.yml` downloads that artifact and runs the Python inference test.
 4. `java-consumer.yml` does the same for the Java inference test.
+5. `js-consumer.yml` does the same for the JavaScript inference test.
 
-The end result is one model package and two independent consumers proving that it can be used from both ecosystems.
+The end result is one model package and three independent consumers proving that it can be used from Python, Java, and JavaScript (including browsers via WebAssembly).

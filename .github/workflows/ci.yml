@@ -19,3 +19,7 @@ jobs:
   java-consumer:
     needs: producer
     uses: ./.github/workflows/java-consumer.yml
+
+  js-consumer:
+    needs: producer
+    uses: ./.github/workflows/js-consumer.yml

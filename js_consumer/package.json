@@ -1,0 +1,11 @@
+{
+  "name": "js-consumer",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/"
+  },
+  "dependencies": {
+    "onnxruntime-web": "1.26.0"
+  }
+}
