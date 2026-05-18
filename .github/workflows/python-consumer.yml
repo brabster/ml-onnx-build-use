@@ -55,3 +55,51 @@ jobs:
         env:
           PICKLE_MODEL_PATH: model-artifact/iris_classifier.pkl
         run: python -m pytest -v -s -m pickle python_consumer/tests
+
+  test-consumer-onnx-example:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Download packaged model
+        uses: actions/download-artifact@v8
+        with:
+          name: packaged-onnx-model
+          path: model-artifact
+
+      - name: Install Python consumer dependencies
+        run: python -m pip install --quiet --upgrade pip && python -m pip install --quiet -r python_consumer/requirements.txt
+
+      - name: Run Python consumer ONNX iris example test
+        env:
+          MODEL_PATH: model-artifact/iris_classifier.onnx
+        run: python -m pytest -v -s -m onnx -k example python_consumer/tests
+
+  test-consumer-pickle-example:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Download packaged model
+        uses: actions/download-artifact@v8
+        with:
+          name: packaged-onnx-model
+          path: model-artifact
+
+      - name: Install Python consumer dependencies
+        run: python -m pip install --quiet --upgrade pip && python -m pip install --quiet -r python_consumer/requirements.txt
+
+      - name: Run Python consumer pickle iris example test
+        env:
+          PICKLE_MODEL_PATH: model-artifact/iris_classifier.pkl
+        run: python -m pytest -v -s -m pickle -k example python_consumer/tests

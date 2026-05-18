@@ -33,3 +33,29 @@ jobs:
           MODEL_PATH: ../model-artifact/iris_classifier.onnx
           SETOSA_MODEL_PATH: ../model-artifact/setosa_probability.onnx
         run: npm test
+
+  test-consumer-iris-example:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+
+      - name: Download packaged model
+        uses: actions/download-artifact@v8
+        with:
+          name: packaged-onnx-model
+          path: model-artifact
+
+      - name: Install JS consumer dependencies
+        working-directory: js_consumer
+        run: npm install
+
+      - name: Run JS consumer iris example test
+        working-directory: js_consumer
+        env:
+          MODEL_PATH: ../model-artifact/iris_classifier.onnx
+        run: node --test --test-name-pattern="reports inference latency and consistency example" tests/
