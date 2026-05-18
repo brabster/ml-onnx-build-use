@@ -19,7 +19,7 @@ test('predicts high Setosa probability from the packaged model', async () => {
 
 test('reports inference latency and consistency example', async () => {
     const features = [5.1, 3.5, 1.4, 0.2];
-    const runs = 10;
+    const runs = 100;
     const durationsMs = [];
     const predictions = [];
 

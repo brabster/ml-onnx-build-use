@@ -18,7 +18,7 @@ def test_python_consumer_predicts_setosa_probability_from_the_packaged_model():
 
 def test_python_consumer_inference_latency_and_consistency_example():
     features = [5.1, 3.5, 1.4, 0.2]
-    runs = 10
+    runs = 100
     durations_ms = []
     predictions = []
 

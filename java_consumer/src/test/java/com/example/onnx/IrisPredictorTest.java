@@ -21,7 +21,7 @@ class IrisPredictorTest {
     @Test
     void reportsInferenceLatencyAndConsistencyExample() throws Exception {
         float[] input = {5.1f, 3.5f, 1.4f, 0.2f};
-        int runs = 10;
+        int runs = 100;
         long[] durationsNs = new long[runs];
         long[] predictions = new long[runs];
 
