@@ -4,9 +4,10 @@ This repository is a small, plain-English example of one ONNX model being produc
 
 ## What is in the repo?
 
-- `producer/` trains two models with scikit-learn and exports ONNX and pickle files.
+- `producer/` trains three models with scikit-learn and exports ONNX and pickle files.
   - `train_and_package.py` — iris flower classifier that outputs a **long** class label (0, 1, or 2), exported as `iris_classifier.onnx` and `iris_classifier.pkl`.
   - `train_and_package_probability.py` — binary classifier that outputs a **float** probability of a flower being Iris Setosa (a value between 0 and 1).
+  - `train_and_package_regression.py` — synthetic linear regression model trained on a larger `make_regression` dataset (100,000 samples, fixed seed), exported as `synthetic_regression.onnx`.
   - `contracts/latency_input_samples.csv` — committed random Iris feature samples shared by all consumer latency tests.
 - `python_consumer/` loads both ONNX files with ONNX Runtime for Python, also loads the pickled classifier, and checks inferences in tests.
 - `java_consumer/` loads the same ONNX files with ONNX Runtime for Java and checks the same inferences in tests.
@@ -37,6 +38,7 @@ The iris dataset ships with scikit-learn, is public, and is small enough to keep
    python3 -m pip install -r producer/requirements.txt
    python3 producer/train_and_package.py --output-dir producer/dist
    python3 producer/train_and_package_probability.py --output-dir producer/dist
+   python3 producer/train_and_package_regression.py --output-dir producer/dist
    ```
 
 2. Run the Python consumer tests.
