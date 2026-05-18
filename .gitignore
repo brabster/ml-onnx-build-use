@@ -5,4 +5,4 @@ __pycache__/
 
 /producer/dist/
 /java_consumer/target/
-
+/js_consumer/node_modules/
