@@ -54,15 +54,18 @@ class IrisPredictorTest {
             }
         }
 
-        long minNs = java.util.Arrays.stream(durationsNs).min().orElse(0L);
-        long maxNs = java.util.Arrays.stream(durationsNs).max().orElse(0L);
-        double avgNs = java.util.Arrays.stream(durationsNs).average().orElse(0.0);
+        java.util.Arrays.sort(durationsNs);
+        long p50Ns = durationsNs[(int) (0.50 * measuredRuns)];
+        long p95Ns = durationsNs[(int) (0.95 * measuredRuns)];
+        long p99Ns = durationsNs[(int) (0.99 * measuredRuns)];
+        long maxNs = durationsNs[measuredRuns - 1];
         System.out.printf(
-                "predict_label latency over %d measured runs after %d warmup runs: min=%.3fms avg=%.3fms max=%.3fms across %d committed sample inputs%n",
+                "predict_label latency over %d measured runs after %d warmup runs: P50=%.3fms P95=%.3fms P99=%.3fms max=%.3fms across %d committed sample inputs%n",
                 measuredRuns,
                 warmupRuns,
-                minNs / 1_000_000.0,
-                avgNs / 1_000_000.0,
+                p50Ns / 1_000_000.0,
+                p95Ns / 1_000_000.0,
+                p99Ns / 1_000_000.0,
                 maxNs / 1_000_000.0,
                 samples.size());
     }
