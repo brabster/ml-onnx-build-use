@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 jobs:
-  test-consumer:
+  test-consumer-onnx:
     runs-on: ubuntu-latest
 
     steps:
@@ -26,9 +26,32 @@ jobs:
       - name: Install Python consumer dependencies
         run: python -m pip install --quiet --upgrade pip && python -m pip install --quiet -r python_consumer/requirements.txt
 
-      - name: Run Python consumer test
+      - name: Run Python consumer ONNX tests
         env:
           MODEL_PATH: model-artifact/iris_classifier.onnx
-          PICKLE_MODEL_PATH: model-artifact/iris_classifier.pkl
           SETOSA_MODEL_PATH: model-artifact/setosa_probability.onnx
-        run: python -m pytest -v -s python_consumer/tests
+        run: python -m pytest -v -s -m onnx python_consumer/tests
+
+  test-consumer-pickle:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Download packaged model
+        uses: actions/download-artifact@v8
+        with:
+          name: packaged-onnx-model
+          path: model-artifact
+
+      - name: Install Python consumer dependencies
+        run: python -m pip install --quiet --upgrade pip && python -m pip install --quiet -r python_consumer/requirements.txt
+
+      - name: Run Python consumer pickle tests
+        env:
+          PICKLE_MODEL_PATH: model-artifact/iris_classifier.pkl
+        run: python -m pytest -v -s -m pickle python_consumer/tests
