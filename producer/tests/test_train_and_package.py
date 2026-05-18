@@ -23,24 +23,24 @@ def test_train_and_package_exports_a_working_model(tmp_path):
     assert pickle_model_path.exists()
 
     metadata = json.loads((tmp_path / METADATA_FILE_NAME).read_text(encoding="utf-8"))
-    assert metadata["dataset"] == "iris"
+    assert metadata["dataset"] == "synthetic_regression"
     assert metadata["pickle_model_file"] == PICKLE_MODEL_FILE_NAME
 
     session = ort.InferenceSession(str(model_path), providers=["CPUExecutionProvider"])
-    label_output, _ = session.run(
+    (variable_output,) = session.run(
         None,
         {"features": np.asarray([metadata["sample_input"]], dtype=np.float32)},
     )
 
-    actual = int(np.asarray(label_output).reshape(-1)[0])
-    print(f"predict_label({metadata['sample_input']}) -> {actual} (expected {metadata['expected_sample_prediction']})")
-    assert actual == metadata["expected_sample_prediction"]
+    actual = float(np.asarray(variable_output).reshape(-1)[0])
+    print(f"predict_value({metadata['sample_input']}) -> {actual:.4f} (expected {metadata['expected_sample_prediction']:.4f})")
+    assert abs(actual - metadata["expected_sample_prediction"]) < metadata["prediction_tolerance"]
 
     with pickle_model_path.open("rb") as model_file:
         pickle_model = pickle.load(model_file)
-    pickle_prediction = int(pickle_model.predict(np.asarray([metadata["sample_input"]], dtype=np.float32))[0])
+    pickle_prediction = float(pickle_model.predict(np.asarray([metadata["sample_input"]], dtype=np.float32))[0])
     print(
-        f"pickle_predict_label({metadata['sample_input']}) -> {pickle_prediction} "
-        f"(expected {metadata['expected_sample_prediction']})"
+        f"pickle_predict_value({metadata['sample_input']}) -> {pickle_prediction:.4f} "
+        f"(expected {metadata['expected_sample_prediction']:.4f})"
     )
-    assert pickle_prediction == metadata["expected_sample_prediction"]
+    assert abs(pickle_prediction - metadata["expected_sample_prediction"]) < metadata["prediction_tolerance"]

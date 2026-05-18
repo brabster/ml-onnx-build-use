@@ -27,6 +27,5 @@ jobs:
       - name: Run Java consumer test
         working-directory: java_consumer
         env:
-          MODEL_PATH: ../model-artifact/iris_classifier.onnx
-          SETOSA_MODEL_PATH: ../model-artifact/setosa_probability.onnx
+          MODEL_PATH: ../model-artifact/regression_model.onnx
         run: mvn --batch-mode --no-transfer-progress test

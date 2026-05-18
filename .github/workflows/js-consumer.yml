@@ -30,6 +30,5 @@ jobs:
       - name: Run JS consumer test
         working-directory: js_consumer
         env:
-          MODEL_PATH: ../model-artifact/iris_classifier.onnx
-          SETOSA_MODEL_PATH: ../model-artifact/setosa_probability.onnx
+          MODEL_PATH: ../model-artifact/regression_model.onnx
         run: npm test

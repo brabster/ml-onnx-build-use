@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { predictLabel, predictSetosaProbability } from '../inference.mjs';
+import { predictValue } from '../inference.mjs';
 
 async function loadLatencyInputSamples() {
     const content = await readFile(
@@ -16,19 +16,15 @@ async function loadLatencyInputSamples() {
     return lines.map((line) => line.split(',').map((value) => Number.parseFloat(value)));
 }
 
-test('predicts Setosa class label from the packaged model', async () => {
-    const features = [5.1, 3.5, 1.4, 0.2];
-    const result = await predictLabel(features);
-    console.log(`predictLabel([5.1, 3.5, 1.4, 0.2]) -> ${result}`);
-    assert.strictEqual(result, 0);
-});
-
-test('predicts high Setosa probability from the packaged model', async () => {
-    const features = [5.1, 3.5, 1.4, 0.2];
-    const probability = await predictSetosaProbability(features);
-    console.log(`predictSetosaProbability([5.1, 3.5, 1.4, 0.2]) -> ${probability.toFixed(4)}`);
-    assert.ok(probability >= 0.0 && probability <= 1.0, 'probability must be between 0 and 1');
-    assert.ok(probability > 0.9, 'a known Setosa sample should have high Setosa probability');
+test('predicts a regression value from the packaged model', async () => {
+    const features = [
+        0.5136836171150208, -0.6633052825927734, -0.40696072578430176, 0.9416861534118652,
+        0.08007215708494186, -0.7074018716812134, -1.4520694017410278, -0.0969497561454773,
+        0.2586694657802582, -1.6983729600906372,
+    ];
+    const result = await predictValue(features);
+    console.log(`predictValue(features) -> ${result.toFixed(4)}`);
+    assert.ok(Math.abs(result - (-145.16)) < 1.0, `Expected prediction close to -145.16, got ${result}`);
 });
 
 test('reports inference latency and consistency example', async () => {
@@ -41,17 +37,20 @@ test('reports inference latency and consistency example', async () => {
 
     for (let warmupRun = 0; warmupRun < warmupRuns; warmupRun += 1) {
         const warmupFeatures = samples[warmupRun % samples.length];
-        await predictLabel(warmupFeatures);
+        await predictValue(warmupFeatures);
     }
 
     for (let i = 0; i < measuredRuns; i += 1) {
         const features = samples[i % samples.length];
         const startedAt = performance.now();
-        const prediction = await predictLabel(features);
+        const prediction = await predictValue(features);
         durationsMs.push(performance.now() - startedAt);
         const sampleKey = features.join(',');
         if (firstPredictionBySample.has(sampleKey)) {
-            assert.strictEqual(prediction, firstPredictionBySample.get(sampleKey));
+            assert.ok(
+                Math.abs(prediction - firstPredictionBySample.get(sampleKey)) < 0.001,
+                `Inconsistent prediction for sample ${sampleKey}`,
+            );
         } else {
             firstPredictionBySample.set(sampleKey, prediction);
         }
@@ -63,6 +62,6 @@ test('reports inference latency and consistency example', async () => {
     const p99Ms = sortedMs[Math.floor(0.99 * measuredRuns)];
     const maxMs = sortedMs[measuredRuns - 1];
     console.log(
-        `predictLabel latency over ${measuredRuns} measured runs after ${warmupRuns} warmup runs: P50=${p50Ms.toFixed(3)}ms P95=${p95Ms.toFixed(3)}ms P99=${p99Ms.toFixed(3)}ms max=${maxMs.toFixed(3)}ms across ${samples.length} committed sample inputs`,
+        `predictValue latency over ${measuredRuns} measured runs after ${warmupRuns} warmup runs: P50=${p50Ms.toFixed(3)}ms P95=${p95Ms.toFixed(3)}ms P99=${p99Ms.toFixed(3)}ms max=${maxMs.toFixed(3)}ms across ${samples.length} committed sample inputs`,
     );
 });

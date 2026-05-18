@@ -7,29 +7,34 @@ from pathlib import Path
 
 import numpy as np
 import onnx
-from sklearn.datasets import load_iris
-from sklearn.linear_model import LogisticRegression
+from sklearn.datasets import make_regression
+from sklearn.linear_model import Ridge
 from skl2onnx import to_onnx
 from skl2onnx.common.data_types import FloatTensorType
 
 
-MODEL_FILE_NAME = "iris_classifier.onnx"
-PICKLE_MODEL_FILE_NAME = "iris_classifier.pkl"
+MODEL_FILE_NAME = "regression_model.onnx"
+PICKLE_MODEL_FILE_NAME = "regression_model.pkl"
 METADATA_FILE_NAME = "model_metadata.json"
+
+N_FEATURES = 10
 
 
 def train_and_package(output_dir: Path) -> Path:
-    iris = load_iris()
-    features = iris.data.astype(np.float32)
-    labels = iris.target
+    features, targets = make_regression(
+        n_samples=100_000,
+        n_features=N_FEATURES,
+        noise=10.0,
+        random_state=42,
+    )
+    features = features.astype(np.float32)
 
-    classifier = LogisticRegression(max_iter=400, random_state=0)
-    classifier.fit(features, labels)
+    model = Ridge(random_state=42)
+    model.fit(features, targets)
 
     onnx_model = to_onnx(
-        classifier,
-        initial_types=[("features", FloatTensorType([None, features.shape[1]]))],
-        options={id(classifier): {"zipmap": False}},
+        model,
+        initial_types=[("features", FloatTensorType([None, N_FEATURES]))],
         target_opset=18,
     )
 
@@ -40,14 +45,16 @@ def train_and_package(output_dir: Path) -> Path:
 
     onnx.save_model(onnx_model, model_path)
     with pickle_model_path.open("wb") as model_file:
-        pickle.dump(classifier, model_file)
+        pickle.dump(model, model_file)
 
+    sample_input = features[0].tolist()
     metadata = {
-        "dataset": "iris",
-        "feature_names": iris.feature_names,
-        "target_names": iris.target_names.tolist(),
-        "sample_input": features[0].tolist(),
-        "expected_sample_prediction": int(labels[0]),
+        "dataset": "synthetic_regression",
+        "n_features": N_FEATURES,
+        "feature_names": [f"feature_{i}" for i in range(N_FEATURES)],
+        "sample_input": sample_input,
+        "expected_sample_prediction": float(model.predict([sample_input])[0]),
+        "prediction_tolerance": 1.0,
         "model_file": MODEL_FILE_NAME,
         "pickle_model_file": PICKLE_MODEL_FILE_NAME,
     }
@@ -56,7 +63,7 @@ def train_and_package(output_dir: Path) -> Path:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Train the iris model and export it as ONNX.")
+    parser = argparse.ArgumentParser(description="Train the regression model and export it as ONNX.")
     parser.add_argument(
         "--output-dir",
         type=Path,

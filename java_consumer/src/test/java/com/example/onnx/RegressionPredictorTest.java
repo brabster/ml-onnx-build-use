@@ -12,16 +12,21 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class IrisPredictorTest {
+class RegressionPredictorTest {
 
     @Test
-    void predictsSetosaFromThePackagedModel() throws Exception {
-        float[] input = {5.1f, 3.5f, 1.4f, 0.2f};
-        try (IrisPredictor predictor = new IrisPredictor(modelPath())) {
-            long prediction = predictor.predict(input);
-            System.out.printf("predict_label(%s) -> %d (expected 0)%n", java.util.Arrays.toString(input), prediction);
-            assertEquals(0L, prediction);
+    void predictsAValueFromThePackagedModel() throws Exception {
+        float[] input = {
+            0.5136836f, -0.6633053f, -0.4069607f, 0.9416862f, 0.0800722f,
+            -0.7074019f, -1.4520694f, -0.0969498f, 0.2586695f, -1.6983730f
+        };
+        try (RegressionPredictor predictor = new RegressionPredictor(modelPath())) {
+            float prediction = predictor.predict(input);
+            System.out.printf("predict_value(features) -> %.4f (expected ~-145.16)%n", prediction);
+            assertTrue(Math.abs(prediction - (-145.16f)) < 1.0f,
+                    "Expected prediction close to -145.16, got " + prediction);
         }
     }
 
@@ -32,9 +37,9 @@ class IrisPredictorTest {
         int warmupRuns = 10;
         int measuredRuns = 1000;
         long[] durationsNs = new long[measuredRuns];
-        Map<String, Long> firstPredictionBySample = new HashMap<>();
+        Map<String, Float> firstPredictionBySample = new HashMap<>();
 
-        try (IrisPredictor predictor = new IrisPredictor(modelPath())) {
+        try (RegressionPredictor predictor = new RegressionPredictor(modelPath())) {
             for (int warmupRun = 0; warmupRun < warmupRuns; warmupRun++) {
                 float[] warmupInput = samples.get(warmupRun % samples.size());
                 predictor.predict(warmupInput);
@@ -43,11 +48,11 @@ class IrisPredictorTest {
             for (int i = 0; i < measuredRuns; i++) {
                 float[] input = samples.get(i % samples.size());
                 long startedAt = System.nanoTime();
-                long prediction = predictor.predict(input);
+                float prediction = predictor.predict(input);
                 durationsNs[i] = System.nanoTime() - startedAt;
                 String sampleKey = java.util.Arrays.toString(input);
                 if (firstPredictionBySample.containsKey(sampleKey)) {
-                    assertEquals(firstPredictionBySample.get(sampleKey), prediction);
+                    assertEquals(firstPredictionBySample.get(sampleKey), prediction, 0.001f);
                 } else {
                     firstPredictionBySample.put(sampleKey, prediction);
                 }
@@ -60,7 +65,7 @@ class IrisPredictorTest {
         long p99Ns = durationsNs[(int) (0.99 * measuredRuns)];
         long maxNs = durationsNs[measuredRuns - 1];
         System.out.printf(
-                "predict_label latency over %d measured runs after %d warmup runs: P50=%.3fms P95=%.3fms P99=%.3fms max=%.3fms across %d committed sample inputs%n",
+                "predict_value latency over %d measured runs after %d warmup runs: P50=%.3fms P95=%.3fms P99=%.3fms max=%.3fms across %d committed sample inputs%n",
                 measuredRuns,
                 warmupRuns,
                 p50Ns / 1_000_000.0,
@@ -73,7 +78,7 @@ class IrisPredictorTest {
     private static Path modelPath() {
         String configuredPath = System.getProperty(
                 "model.path",
-                System.getenv().getOrDefault("MODEL_PATH", "../producer/dist/iris_classifier.onnx"));
+                System.getenv().getOrDefault("MODEL_PATH", "../producer/dist/regression_model.onnx"));
         return Paths.get(configuredPath).toAbsolutePath().normalize();
     }
 
@@ -95,10 +100,11 @@ class IrisPredictorTest {
                 continue;
             }
             String[] values = line.split(",");
-            if (values.length != 4) {
-                throw new IllegalStateException("Expected 4 float values in sample row: " + line);
+            if (values.length != RegressionPredictor.N_FEATURES) {
+                throw new IllegalStateException(
+                        "Expected " + RegressionPredictor.N_FEATURES + " float values in sample row: " + line);
             }
-            float[] sample = new float[4];
+            float[] sample = new float[RegressionPredictor.N_FEATURES];
             for (int i = 0; i < values.length; i++) {
                 sample[i] = Float.parseFloat(values[i]);
             }

@@ -4,13 +4,12 @@ This repository is a small, plain-English example of one ONNX model being produc
 
 ## What is in the repo?
 
-- `producer/` trains two models with scikit-learn and exports ONNX and pickle files.
-  - `train_and_package.py` — iris flower classifier that outputs a **long** class label (0, 1, or 2), exported as `iris_classifier.onnx` and `iris_classifier.pkl`.
-  - `train_and_package_probability.py` — binary classifier that outputs a **float** probability of a flower being Iris Setosa (a value between 0 and 1).
-  - `contracts/latency_input_samples.csv` — committed random Iris feature samples shared by all consumer latency tests.
-- `python_consumer/` loads both ONNX files with ONNX Runtime for Python, also loads the pickled classifier, and checks inferences in tests.
-- `java_consumer/` loads the same ONNX files with ONNX Runtime for Java and checks the same inferences in tests.
-- `js_consumer/` loads the same ONNX files with ONNX Runtime Web and checks the same inferences in tests, using the WebAssembly backend that also powers in-browser inference.
+- `producer/` trains a model with scikit-learn and exports ONNX and pickle files.
+  - `train_and_package.py` — synthetic regression model trained on 100,000 samples generated with `make_regression` (random_state=42), exported as `regression_model.onnx` and `regression_model.pkl`.
+  - `contracts/latency_input_samples.csv` — committed random regression feature samples shared by all consumer latency tests.
+- `python_consumer/` loads the ONNX file with ONNX Runtime for Python, also loads the pickled model, and checks inferences in tests.
+- `java_consumer/` loads the same ONNX file with ONNX Runtime for Java and checks the same inferences in tests.
+- `js_consumer/` loads the same ONNX file with ONNX Runtime Web and checks the same inferences in tests, using the WebAssembly backend that also powers in-browser inference.
 - `.github/workflows/` contains three reusable pipelines plus one orchestration workflow. The producer pipeline publishes the packaged models as a GitHub Actions artifact. The three consumer pipelines download that artifact and run their tests against it.
 
 ## What were the consumer results?
@@ -25,9 +24,9 @@ The consumers were able to perform inference using the ONNX models, and got the 
 
 The numbers will vary in real implementations.
 
-## Why the iris dataset?
+## Why a synthetic regression dataset?
 
-The iris dataset ships with scikit-learn, is public, and is small enough to keep the example focused on packaging and inference instead of data wrangling.
+The synthetic regression dataset is generated with scikit-learn's `make_regression` (100,000 samples, 10 features, random_state=42). It is orders of magnitude larger than the classic iris dataset (150 samples), making it more representative of real-world model training scale while remaining fully reproducible.
 
 ## Run the example locally
 
@@ -36,16 +35,14 @@ The iris dataset ships with scikit-learn, is public, and is small enough to keep
    ```bash
    python3 -m pip install -r producer/requirements.txt
    python3 producer/train_and_package.py --output-dir producer/dist
-   python3 producer/train_and_package_probability.py --output-dir producer/dist
    ```
 
 2. Run the Python consumer tests.
 
    ```bash
    python3 -m pip install -r python_consumer/requirements.txt
-   MODEL_PATH=producer/dist/iris_classifier.onnx \
-     PICKLE_MODEL_PATH=producer/dist/iris_classifier.pkl \
-     SETOSA_MODEL_PATH=producer/dist/setosa_probability.onnx \
+   MODEL_PATH=producer/dist/regression_model.onnx \
+     PICKLE_MODEL_PATH=producer/dist/regression_model.pkl \
      python3 -m pytest python_consumer/tests
    ```
 
@@ -53,8 +50,7 @@ The iris dataset ships with scikit-learn, is public, and is small enough to keep
 
    ```bash
    cd java_consumer
-   MODEL_PATH=../producer/dist/iris_classifier.onnx \
-     SETOSA_MODEL_PATH=../producer/dist/setosa_probability.onnx \
+   MODEL_PATH=../producer/dist/regression_model.onnx \
      mvn --batch-mode test
    ```
 
@@ -63,8 +59,7 @@ The iris dataset ships with scikit-learn, is public, and is small enough to keep
    ```bash
    cd js_consumer
    npm install
-   MODEL_PATH=../producer/dist/iris_classifier.onnx \
-     SETOSA_MODEL_PATH=../producer/dist/setosa_probability.onnx \
+   MODEL_PATH=../producer/dist/regression_model.onnx \
      npm test
    ```
 

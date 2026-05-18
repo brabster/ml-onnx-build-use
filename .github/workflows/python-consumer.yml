@@ -28,8 +28,7 @@ jobs:
 
       - name: Run Python consumer ONNX tests
         env:
-          MODEL_PATH: model-artifact/iris_classifier.onnx
-          SETOSA_MODEL_PATH: model-artifact/setosa_probability.onnx
+          MODEL_PATH: model-artifact/regression_model.onnx
         run: python -m pytest -v -s -m onnx python_consumer/tests
 
   test-consumer-pickle:
@@ -53,5 +52,5 @@ jobs:
 
       - name: Run Python consumer pickle tests
         env:
-          PICKLE_MODEL_PATH: model-artifact/iris_classifier.pkl
+          PICKLE_MODEL_PATH: model-artifact/regression_model.pkl
         run: python -m pytest -v -s -m pickle python_consumer/tests
