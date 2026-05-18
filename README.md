@@ -1,6 +1,6 @@
 # ml-onnx-build-use
 
-This repository is a small, plain-English example of one ONNX model being produced once and consumed in two different runtimes.
+This repository is a small, plain-English example of one ONNX model being produced once and consumed in several different runtimes.
 
 ## What is in the repo?
 
@@ -12,6 +12,18 @@ This repository is a small, plain-English example of one ONNX model being produc
 - `java_consumer/` loads the same ONNX files with ONNX Runtime for Java and checks the same inferences in tests.
 - `js_consumer/` loads the same ONNX files with ONNX Runtime Web and checks the same inferences in tests, using the WebAssembly backend that also powers in-browser inference.
 - `.github/workflows/` contains three reusable pipelines plus one orchestration workflow. The producer pipeline publishes the packaged models as a GitHub Actions artifact. The three consumer pipelines download that artifact and run their tests against it.
+
+## What were the consumer results?
+
+The consumers were able to perform inference using the ONNX models, and got the correct answers. Performance of the inferences, measured after a warm up set and over 1000 inferences (looping over the same 15 randomly-generated inputs) produced the following metrics in [this CI run](https://github.com/brabster/ml-onnx-build-use/actions/runs/26023703853).
+
+|Consumer|P50(ms)|P95(ms)|P99(ms)|max(ms)|
+|--------|-------|-------|-------|-------|
+|Python|0.63|0.70|2.61|6.00|
+|Java|0.03|0.06|0.22|8.07|
+|JavaScript (approximating in-browser inference)|0.95|4.21|6.40|12.56|
+
+The numbers will vary in real implementations.
 
 ## Why the iris dataset?
 
